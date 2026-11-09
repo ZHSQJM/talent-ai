@@ -1,0 +1,91 @@
+spring:
+  application:
+    name: spring-ai
+  # ---------------------------------------------------------------------
+  # 本地私有配置
+  # ---------------------------------------------------------------------
+  # 真实密钥（DeepSeek / MySQL / MinIO）不要写在本文件里。
+  # 两种方式二选一，优先级：环境变量 > application-local.yml > 本文件的默认值
+  #   1) 环境变量：直接设置 DEEPSEEK_API_KEY / MYSQL_PASSWORD / MINIO_ACCESS_KEY 等；
+  #   2) 本地文件：把真实值写进同目录下的 application-local.yml
+  #      （该文件已在 .gitignore 中，模板见 application-local.yml.example）。
+  # spring.profiles.include 会让 Spring Boot 自动加载 application-local.yml；
+  # 文件不存在时不会报错，只是取不到本地覆盖值。
+  profiles:
+    include: local
+  ai:
+    openai:
+      api-key: ${DEEPSEEK_API_KEY:}
+      base-url: ${DEEPSEEK_BASE_URL:https://api.deepseek.com}
+      chat:
+        options:
+          model: deepseek-flash
+#    ollama:
+#      base-url: ${OLLAMA_BASE_URL:http://localhost:11434}
+#      chat:
+#        options:
+#          model: qwen3.5:4b
+#      embedding:
+#        options:
+#          model: bge-m3
+    vectorstore:
+      milvus:
+        host: ${MILVUS_HOST:localhost}
+        port: ${MILVUS_PORT:19530}
+        database-name: ${MILVUS_DATABASE:default}
+        collection-name: ${MILVUS_COLLECTION:rag_knowledge}
+        embedding-dimension: ${MILVUS_EMBEDDING_DIMENSION:384}
+        index-type: HNSW
+        metric-type: COSINE
+        initialize-schema: true
+    chat:
+      memory:
+        repository:
+          jdbc:
+            # 非内嵌数据库需要设为 always，让 Spring AI 自动在 MySQL 中初始化建表
+            initialize-schema: always
+  servlet:
+    multipart:
+      max-file-size: 10GB
+      max-request-size: 10GB
+  datasource:
+    # 原生mysql驱动，不再使用p6spy
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://${MYSQL_HOST:127.0.0.1}/${MYSQL_DATABASE:rag}?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&serverTimezone=GMT%2B8&allowPublicKeyRetrieval=true
+    username: ${MYSQL_USERNAME:root}
+    password: ${MYSQL_PASSWORD:}
+
+logging:
+  level:
+    org.springframework.ai: debug
+    root: info
+
+mybatis-plus:
+  mapper-locations: classpath*:/mapper/**/*.xml
+  type-aliases-package: com.talent.ai.spring.entity
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    arg-name-based-constructor-auto-mapping: true
+  global-config:
+    db-config:
+      id-type: auto
+      logic-delete-field: deletedAt
+      logic-delete-value: "now()"
+      logic-not-delete-value: "null"
+
+minio:
+  endpoint: ${MINIO_ENDPOINT:http://192.168.110.243:9001}
+  accessKey: ${MINIO_ACCESS_KEY:}
+  secretKey: ${MINIO_SECRET_KEY:}
+  bucketName: ${MINIO_BUCKET:hello}
+
+# ---------------------------------------------------------------------
+# RAG 检索（QuestionAnswerAdvisor）参数
+# ---------------------------------------------------------------------
+rag:
+  advisor:
+    # 每次提问从向量库召回的片段数
+    top-k: ${RAG_TOP_K:5}
+    # 相似度阈值，低于该值的片段不参与回答（0 表示不过滤）
+    similarity-threshold: ${RAG_SIMILARITY_THRESHOLD:0.5}

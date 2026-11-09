@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: mcp-server
+  ai:
+    mcp:
+      server:
+        name: mcp-server
+        version: 1.0.0
+        type: SYNC
+        instructions: "提供按照城市名的模拟天气预报查询"
+        annotation-scanner:
+          enabled: true
+server:
+  port: 9120

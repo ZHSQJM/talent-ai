@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>4.1.2</version>
+        <relativePath/> <!-- lookup parent from repository -->
+    </parent>
+    <groupId>com.talent.ai</groupId>
+    <artifactId>talent-ai</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <packaging>pom</packaging>
+    <name>talent-ai</name>
+    <description>talent-ai</description>
+    <url/>
+    <licenses>
+        <license/>
+    </licenses>
+    <developers>
+        <developer/>
+    </developers>
+    <modules>
+        <module>spring-ai-LangChain4j</module>
+        <module>talent-ai-spring</module>
+        <module>talent-ai-mcp</module>
+    </modules>
+    <scm>
+        <connection/>
+        <developerConnection/>
+        <tag/>
+        <url/>
+    </scm>
+    <properties>
+        <java.version>21</java.version>
+        <spring-ai.version>2.0.1</spring-ai.version>
+        <lombok.version>1.18.30</lombok.version>
+        <!-- POI 5.5.1 要求 commons-compress >= 1.28，与 minio 传递依赖的 1.21 冲突，统一到 1.28.0 -->
+        <commons-compress.version>1.28.0</commons-compress.version>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>${lombok.version}</version>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
+    <dependencyManagement>
+        <dependencies>
+            <!--
+              统一 commons-compress 版本。
+              冲突原因：io.minio:minio:8.5.0 传递依赖 commons-compress:1.21（依赖树深度 2），
+              而 tika-parsers-standard-package -> poi-ooxml:5.5.1 需要 commons-compress:1.28.0（深度 4）。
+              Maven「最近者胜」会让 1.21 生效，但 POI 是按 1.28 编译的，
+              解析 docx/xlsx（本质是 zip）时抛：
+                NoSuchMethodError: ZipArchiveInputStream.getNextEntry()
+              这里强制统一到 1.28.0。MinIO 只用到 TarArchiveOutputStream/TarArchiveEntry，
+              相关 API 在 1.28.0 中保持不变，升级安全。
+            -->
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-compress</artifactId>
+                <version>${commons-compress.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.ai</groupId>
+                <artifactId>spring-ai-bom</artifactId>
+                <version>${spring-ai.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+</project>
